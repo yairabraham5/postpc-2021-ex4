@@ -1,3 +1,9 @@
+i solemnly swear that i did this project alone
+
+ANSWER TO QUESTION:
+I would change the code by having an indicator which can tell us if we're in a testing environment and run the service
+just 200ms and if we're in the real app we give 20 seconds(production environment.)
+
 # Find Roots
 
 An Android exercise for developers teaching how to play around with intents, activities, services and broadcast receivers
