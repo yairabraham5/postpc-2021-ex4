@@ -7,10 +7,13 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextClock;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,7 +21,14 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
   private BroadcastReceiver broadcastReceiverForSuccess = null;
+  private BroadcastReceiver broadcastReceiverForFailure = null;
+
+
   // TODO: add any other fields to the activity as you want
+  private long number;
+  private long first_root;
+  private long second_root;
+
 
 
   @Override
@@ -26,9 +36,11 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+
     ProgressBar progressBar = findViewById(R.id.progressBar);
     EditText editTextUserInput = findViewById(R.id.editTextInputNumber);
     Button buttonCalculateRoots = findViewById(R.id.buttonCalculateRoots);
+    number = 0;
 
     // set initial UI:
     progressBar.setVisibility(View.GONE); // hide progress
@@ -44,6 +56,14 @@ public class MainActivity extends AppCompatActivity {
         // text did change
         String newText = editTextUserInput.getText().toString();
         // todo: check conditions to decide if button should be enabled/disabled (see spec below)
+        try {
+          number = Long.parseLong(newText);
+        }
+        catch (NumberFormatException exception){
+            buttonCalculateRoots.setEnabled(false);
+            return;
+        }
+        buttonCalculateRoots.setEnabled(true);
       }
     });
 
@@ -51,18 +71,23 @@ public class MainActivity extends AppCompatActivity {
     buttonCalculateRoots.setOnClickListener(v -> {
       Intent intentToOpenService = new Intent(MainActivity.this, CalculateRootsService.class);
       String userInputString = editTextUserInput.getText().toString();
-      // todo: check that `userInputString` is a number. handle bad input. convert `userInputString` to long
-      long userInputLong = 0; // todo this should be the converted string from the user
+      long userInputLong = number; // todo this should be the converted string from the user
       intentToOpenService.putExtra("number_for_service", userInputLong);
       startService(intentToOpenService);
+      buttonCalculateRoots.setEnabled(false);
       // todo: set views states according to the spec (below)
+      progressBar.setVisibility(View.VISIBLE);
+
     });
 
     // register a broadcast-receiver to handle action "found_roots"
     broadcastReceiverForSuccess = new BroadcastReceiver() {
       @Override
       public void onReceive(Context context, Intent incomingIntent) {
-        if (incomingIntent == null || !incomingIntent.getAction().equals("found_roots")) return;
+
+        if (incomingIntent == null || !incomingIntent.getAction().equals("found_roots")){
+          return;
+        }
         // success finding roots!
         /*
          TODO: handle "roots-found" as defined in the spec (below).
@@ -71,9 +96,21 @@ public class MainActivity extends AppCompatActivity {
            - when creating an intent to open the new-activity, pass the roots as extras to the new-activity intent
              (see for example how did we pass an extra when starting the calculation-service)
          */
+        progressBar.setVisibility(View.GONE);
+        first_root = incomingIntent.getLongExtra("root1", 0);
+        second_root = incomingIntent.getLongExtra("root2", 0);
+        long time = incomingIntent.getLongExtra("time", 0);
+        Intent intentToOpenService = new Intent(MainActivity.this, SuccessFindingRoots.class);
+
+        intentToOpenService.putExtra("number", number);
+        intentToOpenService.putExtra("root1", first_root);
+        intentToOpenService.putExtra("root2", second_root);
+        intentToOpenService.putExtra("time", time);
+        startActivity(intentToOpenService);
       }
     };
     registerReceiver(broadcastReceiverForSuccess, new IntentFilter("found_roots"));
+
 
     /*
     todo:
@@ -81,6 +118,21 @@ public class MainActivity extends AppCompatActivity {
      to show a Toast, use this code:
      `Toast.makeText(this, "text goes here", Toast.LENGTH_SHORT).show()`
      */
+    broadcastReceiverForFailure = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent incomingIntent) {
+        if (incomingIntent == null || !incomingIntent.getAction().equals("stopped_calculations")){
+          return;
+        }
+        long time = incomingIntent.getLongExtra("time_until_give_up_seconds", 0);
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(MainActivity.this, "calculation aborted after " + time + " seconds", Toast.LENGTH_SHORT).show();
+        buttonCalculateRoots.setEnabled(true);
+      }
+    };
+    registerReceiver(broadcastReceiverForFailure, new IntentFilter("stopped_calculations"));
+
+
   }
 
   @Override
@@ -88,18 +140,22 @@ public class MainActivity extends AppCompatActivity {
     super.onDestroy();
     // todo: remove ALL broadcast receivers we registered earlier in onCreate().
     //  to remove a registered receiver, call method `this.unregisterReceiver(<receiver-to-remove>)`
+    unregisterReceiver(broadcastReceiverForSuccess);
+    unregisterReceiver(broadcastReceiverForFailure);
   }
 
   @Override
   protected void onSaveInstanceState(@NonNull Bundle outState) {
     super.onSaveInstanceState(outState);
     // TODO: put relevant data into bundle as you see fit
+    outState.putLong("number", number);
   }
 
   @Override
   protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
     super.onRestoreInstanceState(savedInstanceState);
     // TODO: load data from bundle and set screen state (see spec below)
+    number = savedInstanceState.getLong("number");
   }
 }
 

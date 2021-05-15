@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FindRoots</string>
+    <string name="success">Success</string>
 </resources>

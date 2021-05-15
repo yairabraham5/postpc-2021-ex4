@@ -20,6 +20,7 @@ public class CalculateRootsService extends IntentService {
       Log.e("CalculateRootsService", "can't calculate roots for non-positive input" + numberToCalculateRootsFor);
       return;
     }
+
     /*
     TODO:
      calculate the roots.
@@ -41,5 +42,42 @@ public class CalculateRootsService extends IntentService {
        for input "829851628752296034247307144300617649465159", after 20 seconds give up
 
      */
+    long root1;
+    long root2;
+    long sqrt_of_number = (long)Math.sqrt(numberToCalculateRootsFor);
+    for (long i = sqrt_of_number; i > 0; i--) {
+      if(numberToCalculateRootsFor % i == 0) {
+        root1 = i;
+        root2 = numberToCalculateRootsFor/ i;
+        // todo send broadcast
+        Intent roots_intent = new Intent();
+        roots_intent.setAction("found_roots");
+        roots_intent.putExtra("original_number", numberToCalculateRootsFor);
+        roots_intent.putExtra("root1", root1);
+        roots_intent.putExtra("root2", root2);
+        roots_intent.putExtra("time", (System.currentTimeMillis() - timeStartMs)/1000L);
+        sendBroadcast(roots_intent);
+        return;
+
+      }
+      if(System.currentTimeMillis() - timeStartMs > 20000L){
+        // Todo send broadcast with error.
+        Intent error_intent = new Intent("stopped_calculations");
+        error_intent.putExtra("original_number", numberToCalculateRootsFor);
+        error_intent.putExtra("time_until_give_up_seconds", (System.currentTimeMillis() - timeStartMs)/1000L);
+        sendBroadcast(error_intent);
+        return;
+      }
+    }
+    while(true){
+      if(System.currentTimeMillis() - timeStartMs > 20000L) {
+        // Todo send broadcast with error.
+        Intent error_intent = new Intent("stopped_calculations");
+        error_intent.putExtra("original_number", numberToCalculateRootsFor);
+        error_intent.putExtra("time_until_give_up_seconds", (System.currentTimeMillis() - timeStartMs) / 1000L);
+        sendBroadcast(error_intent);
+        return;
+      }
+    }
   }
 }

@@ -46,7 +46,46 @@ public class MainActivityTest extends TestCase {
     Button button = mainActivity.findViewById(R.id.buttonCalculateRoots);
 
     // test: insert input to the edit text and verify that the button is enabled
-    // TODO: implement
+    inputEditText.setText("75");
+    assertTrue(button.isEnabled());
+  }
+
+  @Test
+  public void _userIsEnteringNumberInput_and_CalculationAlreadyHappned_then_theButtonShouldBeDisabled(){
+    MainActivity mainActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
+
+    // find the edit-text and the button
+    EditText inputEditText = mainActivity.findViewById(R.id.editTextInputNumber);
+    Button button = mainActivity.findViewById(R.id.buttonCalculateRoots);
+    inputEditText.setText("75");
+    button.performClick();
+    assertFalse(button.isEnabled());
+  }
+
+  @Test
+  public void userIsEnteringInvalidInput_then_theButtonShouldBeDisabled(){
+    MainActivity mainActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
+
+    // find the edit-text and the button
+    EditText inputEditText = mainActivity.findViewById(R.id.editTextInputNumber);
+    Button button = mainActivity.findViewById(R.id.buttonCalculateRoots);
+    inputEditText.setText("frfre");
+    assertFalse(button.isEnabled());
+
+  }
+
+  @Test
+  public void userIsEnteringNumberInput_and_deletingNumber_then_buttonShouldDisabled(){
+
+    MainActivity mainActivity = Robolectric.buildActivity(MainActivity.class).create().visible().get();
+
+    // find the edit-text and the button
+    EditText inputEditText = mainActivity.findViewById(R.id.editTextInputNumber);
+    Button button = mainActivity.findViewById(R.id.buttonCalculateRoots);
+    inputEditText.setText("72");
+    assertTrue(button.isEnabled());
+    inputEditText.setText("");
+    assertFalse(button.isEnabled());
   }
 
   // TODO: add 1 or 2 more unit tests to the activity. so your "writing tests" skill won't get rusty.
